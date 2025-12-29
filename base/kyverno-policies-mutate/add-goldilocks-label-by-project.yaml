@@ -18,6 +18,16 @@ spec:
                   - "infrastructure"
       mutate:
         mutateExistingOnPolicyUpdate: true
+        targets:
+          - apiVersion: v1
+            kind: Namespace
+            selector:
+              matchExpressions:
+                - key: field.cattle.io/projectId
+                  operator: In
+                  values:
+                    - "applications"
+                    - "infrastructure"
         patchStrategicMerge:
           metadata:
             labels:
