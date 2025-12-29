@@ -2,6 +2,6 @@ resources:
   - ../../base/namespaces
   - ../../base/vpa
   - ../../base/goldilocks
-  - ../../base/limitranges
   - ../../base/kyverno-policies-mutate
+  - ../../base/kyverno-policies-generate
   - ../../base/kyverno-policies-audit

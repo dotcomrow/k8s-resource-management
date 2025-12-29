@@ -3,7 +3,6 @@ kind: ClusterPolicy
 metadata:
   name: add-goldilocks-label-by-project
 spec:
-  mutateExistingOnPolicyUpdate: true
   rules:
     - name: label-goldilocks-namespaces
       match:
@@ -18,6 +17,7 @@ spec:
                   - "applications"
                   - "infrastructure"
       mutate:
+        mutateExistingOnPolicyUpdate: true
         patchStrategicMerge:
           metadata:
             labels:

@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-limitrange-defaults
+spec:
+  rules:
+    - name: generate-default-limitrange
+      match:
+        resources:
+          kinds:
+            - Namespace
+          selector:
+            matchExpressions:
+              - key: field.cattle.io/projectId
+                operator: In
+                values:
+                  - applications
+                  - infrastructure
+      exclude:
+        resources:
+          selector:
+            matchLabels:
+              platform.suncoast.systems/limitrange: "disabled"
+      generate:
+        apiVersion: v1
+        kind: LimitRange
+        name: default-resource-limits
+        namespace: "{{request.object.metadata.name}}"
+        generateExisting: true
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              app.kubernetes.io/managed-by: kyverno
+          spec:
+            limits:
+              - type: Container
+                defaultRequest:
+                  cpu: "100m"
+                  memory: "128Mi"

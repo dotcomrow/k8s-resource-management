@@ -8,7 +8,7 @@ and namespace defaults) managed by ArgoCD.
 - `argocd/application.yaml` boots a single ArgoCD app (prune disabled).
 - `base/` contains install manifests and policy/default building blocks.
 - `overlays/safe` is the initial, audit-first rollout.
-- `overlays/strict` adds quotas and policy enforcement later.
+- `overlays/strict` adds policy enforcement later.
 
 ## Usage
 
@@ -18,7 +18,8 @@ and namespace defaults) managed by ArgoCD.
 
 ## Notes
 
-- `base/limitranges` and `base/quotas` target the `default` namespace as an
-  example. Duplicate or adjust for your namespaces.
+- LimitRanges are generated via Kyverno for namespaces in the Applications and
+  Infrastructure projects (`base/kyverno-policies-generate`).
+- Add `platform.suncoast.systems/limitrange=disabled` to a namespace to opt out.
 - Goldilocks only reports for namespaces labeled
   `goldilocks.fairwinds.com/enabled: "true"`.
