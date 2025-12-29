@@ -1,0 +1,3 @@
+resources:
+  - require-requests.yaml
+  - require-limits.yaml

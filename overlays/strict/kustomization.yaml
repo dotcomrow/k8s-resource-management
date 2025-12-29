@@ -1,0 +1,8 @@
+resources:
+  - ../../base/namespaces
+  - ../../base/vpa
+  - ../../base/goldilocks
+  - ../../base/limitranges
+  - ../../base/kyverno-policies-mutate
+  - ../../base/quotas
+  - ../../base/kyverno-policies-enforce

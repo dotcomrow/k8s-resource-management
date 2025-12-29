@@ -1,0 +1,4 @@
+resources:
+  - goldilocks.yaml
+patchesStrategicMerge:
+  - patch-dashboard-service.yaml
