@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: vault-policy-externalsecrets
   namespace: goldilocks
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 data:
   bootstrap.py: |
     #!/usr/bin/env python3
