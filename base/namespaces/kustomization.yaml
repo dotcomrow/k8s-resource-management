@@ -1,2 +1,3 @@
 resources:
   - goldilocks-namespace.yaml
+  - k8s-resource-management-namespace.yaml
