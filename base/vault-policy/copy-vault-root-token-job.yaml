@@ -3,12 +3,16 @@ kind: ServiceAccount
 metadata:
   name: vault-root-token-copier
   namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: vault-root-token-read
   namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -20,6 +24,8 @@ kind: RoleBinding
 metadata:
   name: vault-root-token-read
   namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -34,6 +40,8 @@ kind: Role
 metadata:
   name: vault-root-token-write
   namespace: goldilocks
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -44,6 +52,8 @@ kind: RoleBinding
 metadata:
   name: vault-root-token-write
   namespace: goldilocks
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
