@@ -33,7 +33,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: vault-root-token
-                  key: token
+                  key: VAULT_TOKEN
           volumeMounts:
             - name: scripts
               mountPath: /scripts
