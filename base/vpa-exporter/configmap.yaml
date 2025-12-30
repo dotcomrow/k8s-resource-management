@@ -9,6 +9,8 @@ data:
   TARGET_DIR: "vpa-recommendations"
   GIT_AUTHOR_NAME: "vpa-recommendation-exporter"
   GIT_AUTHOR_EMAIL: "vpa-exporter@suncoast.systems"
+  EXCLUDE_NAMESPACES: ""
+  EXCLUDE_TARGETS: "ollama/ollama"
   RUN_SH: |
     #!/bin/sh
     set -eu
@@ -56,6 +58,7 @@ data:
     fi
   render.py: |
     #!/usr/bin/env python3
+    import fnmatch
     import json
     import os
     import re
@@ -64,12 +67,51 @@ data:
     def clean_name(value):
         return re.sub(r"[^a-zA-Z0-9_.-]", "-", value)
 
+    def split_list(value):
+        if not value:
+            return []
+        return [item for item in re.split(r"[,\s]+", value.strip()) if item]
+
+    def parse_target_patterns(value):
+        patterns = []
+        for item in split_list(value):
+            parts = item.split("/")
+            if len(parts) == 3:
+                kind_pat, namespace_pat, name_pat = parts
+            elif len(parts) == 2:
+                namespace_pat, name_pat = parts
+                kind_pat = "*"
+            else:
+                kind_pat = "*"
+                namespace_pat = "*"
+                name_pat = parts[0]
+            patterns.append((kind_pat or "*", namespace_pat or "*", name_pat or "*"))
+        return patterns
+
+    def is_excluded_namespace(namespace, patterns):
+        for pattern in patterns:
+            if fnmatch.fnmatch(namespace, pattern):
+                return True
+        return False
+
+    def is_excluded_target(kind, namespace, name, patterns):
+        for kind_pat, namespace_pat, name_pat in patterns:
+            if (
+                fnmatch.fnmatch(kind, kind_pat)
+                and fnmatch.fnmatch(namespace, namespace_pat)
+                and fnmatch.fnmatch(name, name_pat)
+            ):
+                return True
+        return False
+
     if len(sys.argv) < 2:
         print("Usage: render.py <output-dir>")
         sys.exit(1)
 
     output_dir = sys.argv[1]
     data = json.load(sys.stdin)
+    exclude_namespaces = split_list(os.environ.get("EXCLUDE_NAMESPACES", ""))
+    exclude_targets = parse_target_patterns(os.environ.get("EXCLUDE_TARGETS", ""))
 
     items = data.get("items", [])
     for item in items:
@@ -83,7 +125,13 @@ data:
         if not (kind and name and namespace):
             continue
 
+        if is_excluded_namespace(namespace, exclude_namespaces):
+            continue
+
         if kind not in ("Deployment", "StatefulSet", "DaemonSet"):
+            continue
+
+        if is_excluded_target(kind, namespace, name, exclude_targets):
             continue
 
         rec = item.get("status", {}).get("recommendation", {})

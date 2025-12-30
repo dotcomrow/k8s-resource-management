@@ -45,6 +45,16 @@ spec:
                     configMapKeyRef:
                       name: vpa-recommendation-exporter
                       key: GIT_AUTHOR_EMAIL
+                - name: EXCLUDE_NAMESPACES
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_NAMESPACES
+                - name: EXCLUDE_TARGETS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_TARGETS
                 - name: GIT_USERNAME
                   valueFrom:
                     secretKeyRef:
