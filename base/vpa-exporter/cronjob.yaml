@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vpa-recommendation-exporter
+  namespace: goldilocks
+spec:
+  schedule: "17 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: vpa-recommendation-exporter
+          restartPolicy: OnFailure
+          containers:
+            - name: exporter
+              image: python:3.11-slim
+              command: ["/bin/sh", "-c"]
+              args: ["/scripts/RUN_SH"]
+              env:
+                - name: REPO_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: REPO_URL
+                - name: REPO_BRANCH
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: REPO_BRANCH
+                - name: TARGET_DIR
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: TARGET_DIR
+                - name: GIT_AUTHOR_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: GIT_AUTHOR_NAME
+                - name: GIT_AUTHOR_EMAIL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: GIT_AUTHOR_EMAIL
+                - name: GIT_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: vpa-recommendation-exporter-git
+                      key: username
+                - name: GIT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: vpa-recommendation-exporter-git
+                      key: token
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: vpa-recommendation-exporter
+                defaultMode: 0755

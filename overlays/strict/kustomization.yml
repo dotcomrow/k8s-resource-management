@@ -5,3 +5,4 @@ resources:
   - ../../base/kyverno-policies-mutate
   - ../../base/kyverno-policies-generate
   - ../../base/kyverno-policies-enforce
+  - ../../base/vpa-exporter

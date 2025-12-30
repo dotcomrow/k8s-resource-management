@@ -21,5 +21,25 @@ and namespace defaults) managed by ArgoCD.
 - LimitRanges are generated via Kyverno for namespaces in the Applications and
   Infrastructure projects (`base/kyverno-policies-generate`).
 - Add `platform.suncoast.systems/limitrange=disabled` to a namespace to opt out.
+- VPA recommendations are exported on a schedule by `base/vpa-exporter` to the
+  patch repo (`vpa-recommendations/`).
+
+## ArgoCD ignore differences
+
+Workload apps should ignore container `resources` so patched sizing is not
+reverted. Example snippet:
+
+```
+spec:
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/spec/containers
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/template/spec/containers
+```
 - Goldilocks only reports for namespaces labeled
   `goldilocks.fairwinds.com/enabled: "true"`.
