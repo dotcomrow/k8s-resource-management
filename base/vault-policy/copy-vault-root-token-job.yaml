@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-root-token-copier
+  namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-root-token-read
+  namespace: vault
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["vault-root-token"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-root-token-read
+  namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vault-root-token-read
+subjects:
+  - kind: ServiceAccount
+    name: vault-root-token-copier
+    namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vault-root-token-write
+  namespace: goldilocks
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "patch", "update", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vault-root-token-write
+  namespace: goldilocks
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vault-root-token-write
+subjects:
+  - kind: ServiceAccount
+    name: vault-root-token-copier
+    namespace: vault
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: copy-vault-root-token-to-goldilocks
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: disabled
+    spec:
+      serviceAccountName: vault-root-token-copier
+      restartPolicy: Never
+      containers:
+        - name: copy-secret
+          image: alpine/k8s:1.31.4
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "Copying 'vault-root-token' from vault -> goldilocks..."
+              kubectl get secret vault-root-token -n vault -o yaml | \
+                sed 's/namespace: vault/namespace: goldilocks/' | \
+                kubectl apply -f -
+              echo "Secret copied successfully."

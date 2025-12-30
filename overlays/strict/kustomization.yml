@@ -6,3 +6,4 @@ resources:
   - ../../base/kyverno-policies-generate
   - ../../base/kyverno-policies-enforce
   - ../../base/vpa-exporter
+  - ../../base/vault-policy

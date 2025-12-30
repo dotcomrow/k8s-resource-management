@@ -23,6 +23,8 @@ and namespace defaults) managed by ArgoCD.
 - Add `platform.suncoast.systems/limitrange=disabled` to a namespace to opt out.
 - VPA recommendations are exported on a schedule by `base/vpa-exporter` to the
   patch repo (`vpa-recommendations/`).
+- Vault policy bootstrap job lives in `base/vault-policy` and expects a Secret
+  named `vault-root-token` in the `goldilocks` namespace with a `token` key.
 
 ## ArgoCD ignore differences
 
