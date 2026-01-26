@@ -9,6 +9,7 @@ metadata:
     teleport.dev/protocol: "http"
     teleport.dev/public_addr: "goldilocks-gui.app.suncoast.systems"
     teleport.dev/labels: "environment=production,service=goldilocks"
+    teleport.dev/description: "Goldilocks dashboard for Kubernetes resource recommendations"
   labels:
     teleport.dev/enroll: "true"
     app.kubernetes.io/name: goldilocks
