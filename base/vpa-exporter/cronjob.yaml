@@ -4,7 +4,7 @@ metadata:
   name: vpa-recommendation-exporter
   namespace: goldilocks
 spec:
-  schedule: "17 * * * *"
+  schedule: "17 3 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
