@@ -9,8 +9,19 @@ data:
   TARGET_DIR: "vpa-recommendations"
   GIT_AUTHOR_NAME: "vpa-recommendation-exporter"
   GIT_AUTHOR_EMAIL: "vpa-exporter@suncoast.systems"
-  EXCLUDE_NAMESPACES: "nfs-system,logging-and-monitoring"
-  EXCLUDE_TARGETS: "ollama/ollama"
+  EXCLUDE_NAMESPACES: "nfs-system"
+  EXCLUDE_TARGETS: ""
+  EXCLUDE_NAMESPACE_LABELS: "platform.suncoast.systems/vpa-exclude=true"
+  EXCLUDE_NAMESPACE_ANNOTATIONS: ""
+  EXCLUDE_WORKLOAD_LABELS: "platform.suncoast.systems/vpa-exclude=true"
+  EXCLUDE_WORKLOAD_ANNOTATIONS: ""
+  EXCLUDE_POD_LABELS: "platform.suncoast.systems/vpa-exclude=true"
+  EXCLUDE_POD_ANNOTATIONS: ""
+  LIMIT_POLICY: "upperBound"
+  LIMIT_FALLBACK_MULTIPLIER: "1.5"
+  MIN_REL_CHANGE: "0.1"
+  MIN_CPU_MILLICORES: "50"
+  MIN_MEM_BYTES: "67108864"
   RUN_SH: |
     #!/bin/sh
     set -eu
@@ -45,9 +56,19 @@ data:
     cd "${WORKDIR}/repo"
 
     mkdir -p "${TARGET_DIR}"
-    rm -f "${TARGET_DIR}"/*.json
 
-    kubectl get vpa -A -o json | python3 /scripts/render.py "${TARGET_DIR}"
+    NAMESPACE_JSON="${WORKDIR}/namespaces.json"
+    WORKLOADS_JSON="${WORKDIR}/workloads.json"
+    REPLICASETS_JSON="${WORKDIR}/replicasets.json"
+    PODS_JSON="${WORKDIR}/pods.json"
+
+    kubectl get ns -o json > "${NAMESPACE_JSON}"
+    kubectl get deploy,statefulset,daemonset -A -o json > "${WORKLOADS_JSON}"
+    kubectl get rs -A -o json > "${REPLICASETS_JSON}"
+    kubectl get pods -A -o json > "${PODS_JSON}"
+
+    NAMESPACE_JSON="${NAMESPACE_JSON}" WORKLOADS_JSON="${WORKLOADS_JSON}" REPLICASETS_JSON="${REPLICASETS_JSON}" PODS_JSON="${PODS_JSON}" \
+      kubectl get vpa -A -o json | python3 /scripts/render.py "${TARGET_DIR}"
 
     if git status --porcelain | grep . >/dev/null 2>&1; then
       git add "${TARGET_DIR}"
@@ -59,6 +80,7 @@ data:
   render.py: |
     #!/usr/bin/env python3
     import fnmatch
+    import glob
     import json
     import os
     import re
@@ -88,6 +110,56 @@ data:
             patterns.append((kind_pat or "*", namespace_pat or "*", name_pat or "*"))
         return patterns
 
+    def parse_selectors(value):
+        selectors = []
+        for item in split_list(value):
+            if "=" in item:
+                key, val = item.split("=", 1)
+                key = key.strip()
+                val = val.strip()
+                if key:
+                    selectors.append((key, val))
+            else:
+                key = item.strip()
+                if key:
+                    selectors.append((key, None))
+        return selectors
+
+    def matches_selectors(values, selectors):
+        if not selectors or not values:
+            return False
+        for key, val in selectors:
+            if key in values and (val is None or str(values.get(key)) == val):
+                return True
+        return False
+
+    def metadata_matches(meta, label_selectors, annotation_selectors):
+        if not meta:
+            return False
+        labels = meta.get("labels") or {}
+        annotations = meta.get("annotations") or {}
+        return (
+            matches_selectors(labels, label_selectors)
+            or matches_selectors(annotations, annotation_selectors)
+        )
+
+    def load_json(path):
+        if not path:
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                return json.load(fh)
+        except Exception:
+            return None
+
+    def controller_owner(owner_refs):
+        if not owner_refs:
+            return None
+        for ref in owner_refs:
+            if ref.get("controller") is True:
+                return ref
+        return owner_refs[0] if owner_refs else None
+
     def is_excluded_namespace(namespace, patterns):
         for pattern in patterns:
             if fnmatch.fnmatch(namespace, pattern):
@@ -104,6 +176,71 @@ data:
                 return True
         return False
 
+    def parse_cpu_millicores(value):
+        if value is None:
+            return None
+        value = str(value)
+        if value.endswith("m"):
+            try:
+                return int(float(value[:-1]))
+            except ValueError:
+                return None
+        try:
+            return int(float(value) * 1000)
+        except ValueError:
+            return None
+
+    def parse_mem_bytes(value):
+        if value is None:
+            return None
+        value = str(value)
+        if re.match(r"^\d+$", value):
+            return int(value)
+        m = re.match(r"^([0-9.]+)([KMGTE]i?|[kmgte])$", value)
+        if not m:
+            return None
+        number = float(m.group(1))
+        unit = m.group(2)
+        unit_map = {
+            "Ki": 1024,
+            "Mi": 1024 ** 2,
+            "Gi": 1024 ** 3,
+            "Ti": 1024 ** 4,
+            "Pi": 1024 ** 5,
+            "Ei": 1024 ** 6,
+            "K": 1000,
+            "M": 1000 ** 2,
+            "G": 1000 ** 3,
+            "T": 1000 ** 4,
+            "P": 1000 ** 5,
+            "E": 1000 ** 6,
+            "k": 1000,
+            "m": 1000 ** 2,
+            "g": 1000 ** 3,
+            "t": 1000 ** 4,
+            "p": 1000 ** 5,
+            "e": 1000 ** 6,
+        }
+        return int(number * unit_map.get(unit, 1))
+
+    def format_cpu_millicores(value):
+        return f"{int(round(value))}m"
+
+    def format_mem_bytes(value):
+        return str(int(round(value)))
+
+    def keep_or_update(old_value, new_value, min_rel, min_abs):
+        if old_value is None or new_value is None:
+            return new_value
+        diff = abs(new_value - old_value)
+        if old_value > 0:
+            rel = diff / old_value
+        else:
+            rel = 1.0
+        if diff < min_abs and rel < min_rel:
+            return old_value
+        return new_value
+
     if len(sys.argv) < 2:
         print("Usage: render.py <output-dir>")
         sys.exit(1)
@@ -112,6 +249,90 @@ data:
     data = json.load(sys.stdin)
     exclude_namespaces = split_list(os.environ.get("EXCLUDE_NAMESPACES", ""))
     exclude_targets = parse_target_patterns(os.environ.get("EXCLUDE_TARGETS", ""))
+    exclude_namespace_labels = parse_selectors(os.environ.get("EXCLUDE_NAMESPACE_LABELS", ""))
+    exclude_namespace_annotations = parse_selectors(os.environ.get("EXCLUDE_NAMESPACE_ANNOTATIONS", ""))
+    exclude_workload_labels = parse_selectors(os.environ.get("EXCLUDE_WORKLOAD_LABELS", ""))
+    exclude_workload_annotations = parse_selectors(os.environ.get("EXCLUDE_WORKLOAD_ANNOTATIONS", ""))
+    exclude_pod_labels = parse_selectors(os.environ.get("EXCLUDE_POD_LABELS", ""))
+    exclude_pod_annotations = parse_selectors(os.environ.get("EXCLUDE_POD_ANNOTATIONS", ""))
+
+    limit_policy = os.environ.get("LIMIT_POLICY", "upperBound").strip().lower()
+    limit_multiplier = float(os.environ.get("LIMIT_FALLBACK_MULTIPLIER", "1.5"))
+    min_rel_change = float(os.environ.get("MIN_REL_CHANGE", "0.1"))
+    min_cpu_m = int(os.environ.get("MIN_CPU_MILLICORES", "50"))
+    min_mem_b = int(os.environ.get("MIN_MEM_BYTES", "67108864"))
+
+    existing_files = {
+        os.path.basename(path): path
+        for path in glob.glob(os.path.join(output_dir, "*.json"))
+    }
+    written_files = set()
+
+    excluded_namespaces_meta = set()
+    namespaces_json = load_json(os.environ.get("NAMESPACE_JSON", ""))
+    if namespaces_json and (exclude_namespace_labels or exclude_namespace_annotations):
+        for ns in namespaces_json.get("items", []):
+            meta = ns.get("metadata", {})
+            name = meta.get("name")
+            if name and metadata_matches(meta, exclude_namespace_labels, exclude_namespace_annotations):
+                excluded_namespaces_meta.add(name)
+
+    excluded_workloads_meta = set()
+    workloads_json = load_json(os.environ.get("WORKLOADS_JSON", ""))
+    if workloads_json and (exclude_workload_labels or exclude_workload_annotations):
+        for workload in workloads_json.get("items", []):
+            kind = workload.get("kind")
+            meta = workload.get("metadata", {})
+            name = meta.get("name")
+            namespace = meta.get("namespace")
+            if (
+                kind
+                and name
+                and namespace
+                and metadata_matches(meta, exclude_workload_labels, exclude_workload_annotations)
+            ):
+                excluded_workloads_meta.add((kind, namespace, name))
+
+    if exclude_pod_labels or exclude_pod_annotations:
+        replicaset_map = {}
+        replicasets_json = load_json(os.environ.get("REPLICASETS_JSON", ""))
+        if replicasets_json:
+            for rs in replicasets_json.get("items", []):
+                meta = rs.get("metadata", {})
+                namespace = meta.get("namespace")
+                name = meta.get("name")
+                owner = controller_owner(meta.get("ownerReferences", []))
+                if (
+                    namespace
+                    and name
+                    and owner
+                    and owner.get("kind") == "Deployment"
+                    and owner.get("name")
+                ):
+                    replicaset_map[(namespace, name)] = owner.get("name")
+
+        pods_json = load_json(os.environ.get("PODS_JSON", ""))
+        if pods_json:
+            for pod in pods_json.get("items", []):
+                meta = pod.get("metadata", {})
+                namespace = meta.get("namespace")
+                if not namespace:
+                    continue
+                if not metadata_matches(meta, exclude_pod_labels, exclude_pod_annotations):
+                    continue
+                owner = controller_owner(meta.get("ownerReferences", []))
+                if not owner:
+                    continue
+                owner_kind = owner.get("kind")
+                owner_name = owner.get("name")
+                if not owner_kind or not owner_name:
+                    continue
+                if owner_kind == "ReplicaSet":
+                    deployment_name = replicaset_map.get((namespace, owner_name))
+                    if deployment_name:
+                        excluded_workloads_meta.add(("Deployment", namespace, deployment_name))
+                elif owner_kind in ("Deployment", "StatefulSet", "DaemonSet"):
+                    excluded_workloads_meta.add((owner_kind, namespace, owner_name))
 
     items = data.get("items", [])
     for item in items:
@@ -128,16 +349,56 @@ data:
         if is_excluded_namespace(namespace, exclude_namespaces):
             continue
 
+        if namespace in excluded_namespaces_meta:
+            continue
+
         if kind not in ("Deployment", "StatefulSet", "DaemonSet"):
             continue
 
         if is_excluded_target(kind, namespace, name, exclude_targets):
             continue
 
+        if (kind, namespace, name) in excluded_workloads_meta:
+            continue
+
         rec = item.get("status", {}).get("recommendation", {})
         containers = rec.get("containerRecommendations", [])
         if not containers:
             continue
+
+        filename = f"{clean_name(namespace)}__{clean_name(kind)}__{clean_name(name)}.json"
+        path = os.path.join(output_dir, filename)
+        existing_patch = None
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as fh:
+                    existing_patch = json.load(fh)
+            except Exception:
+                existing_patch = None
+
+        existing_containers = {}
+        if existing_patch:
+            for container in (
+                existing_patch.get("spec", {})
+                .get("template", {})
+                .get("spec", {})
+                .get("containers", [])
+            ):
+                cname = container.get("name")
+                if not cname:
+                    continue
+                requests = container.get("resources", {}).get("requests", {})
+                limits = container.get("resources", {}).get("limits", {})
+                existing_containers[cname] = {
+                    "req_cpu_raw": requests.get("cpu"),
+                    "req_mem_raw": requests.get("memory"),
+                    "lim_cpu_raw": limits.get("cpu"),
+                    "lim_mem_raw": limits.get("memory"),
+                    "req_cpu": parse_cpu_millicores(requests.get("cpu")),
+                    "req_mem": parse_mem_bytes(requests.get("memory")),
+                    "lim_cpu": parse_cpu_millicores(limits.get("cpu")),
+                    "lim_mem": parse_mem_bytes(limits.get("memory")),
+                }
 
         patch = {
             "apiVersion": api_version,
@@ -158,27 +419,107 @@ data:
         for container in containers:
             cname = container.get("containerName")
             target = container.get("target", {})
+            upper = container.get("upperBound", {})
             if not cname or not target:
                 continue
-            cpu = target.get("cpu")
-            memory = target.get("memory")
-            if cpu is None or memory is None:
+
+            req_cpu_raw = target.get("cpu")
+            req_mem_raw = target.get("memory")
+            if req_cpu_raw is None or req_mem_raw is None:
                 continue
-            patch["spec"]["template"]["spec"]["containers"].append({
+
+            req_cpu_m = parse_cpu_millicores(req_cpu_raw)
+            req_mem_b = parse_mem_bytes(req_mem_raw)
+
+            lim_cpu_raw = None
+            lim_mem_raw = None
+            lim_cpu_m = None
+            lim_mem_b = None
+
+            if limit_policy != "none":
+                upper_cpu_raw = upper.get("cpu")
+                upper_mem_raw = upper.get("memory")
+                if limit_policy == "upperbound" and upper_cpu_raw is not None:
+                    lim_cpu_raw = upper_cpu_raw
+                    lim_cpu_m = parse_cpu_millicores(upper_cpu_raw)
+                if limit_policy == "upperbound" and upper_mem_raw is not None:
+                    lim_mem_raw = upper_mem_raw
+                    lim_mem_b = parse_mem_bytes(upper_mem_raw)
+
+                if lim_cpu_raw is None and req_cpu_m is not None:
+                    lim_cpu_m = req_cpu_m * limit_multiplier
+                    lim_cpu_raw = format_cpu_millicores(lim_cpu_m)
+                if lim_mem_raw is None and req_mem_b is not None:
+                    lim_mem_b = req_mem_b * limit_multiplier
+                    lim_mem_raw = format_mem_bytes(lim_mem_b)
+
+            existing = existing_containers.get(cname, {})
+
+            updated_req_cpu_m = keep_or_update(existing.get("req_cpu"), req_cpu_m, min_rel_change, min_cpu_m)
+            updated_req_mem_b = keep_or_update(existing.get("req_mem"), req_mem_b, min_rel_change, min_mem_b)
+
+            updated_lim_cpu_m = None
+            updated_lim_mem_b = None
+            if limit_policy != "none":
+                updated_lim_cpu_m = keep_or_update(existing.get("lim_cpu"), lim_cpu_m, min_rel_change, min_cpu_m)
+                updated_lim_mem_b = keep_or_update(existing.get("lim_mem"), lim_mem_b, min_rel_change, min_mem_b)
+
+            if updated_req_cpu_m is None or updated_req_mem_b is None:
+                continue
+
+            if existing.get("req_cpu") == updated_req_cpu_m:
+                req_cpu_raw = existing.get("req_cpu_raw") or req_cpu_raw
+            if existing.get("req_mem") == updated_req_mem_b:
+                req_mem_raw = existing.get("req_mem_raw") or req_mem_raw
+
+            if limit_policy != "none":
+                if existing.get("lim_cpu") == updated_lim_cpu_m:
+                    lim_cpu_raw = existing.get("lim_cpu_raw") or lim_cpu_raw
+                if existing.get("lim_mem") == updated_lim_mem_b:
+                    lim_mem_raw = existing.get("lim_mem_raw") or lim_mem_raw
+
+            # Ensure limits are not below requests
+            if limit_policy != "none":
+                if lim_cpu_raw is not None and req_cpu_m is not None:
+                    lim_cpu_m_final = parse_cpu_millicores(lim_cpu_raw)
+                    if lim_cpu_m_final is not None and lim_cpu_m_final < req_cpu_m:
+                        lim_cpu_raw = req_cpu_raw
+                if lim_mem_raw is not None and req_mem_b is not None:
+                    lim_mem_b_final = parse_mem_bytes(lim_mem_raw)
+                    if lim_mem_b_final is not None and lim_mem_b_final < req_mem_b:
+                        lim_mem_raw = req_mem_raw
+
+            container_patch = {
                 "name": cname,
                 "resources": {
                     "requests": {
-                        "cpu": str(cpu),
-                        "memory": str(memory),
+                        "cpu": str(req_cpu_raw),
+                        "memory": str(req_mem_raw),
                     }
-                }
-            })
+                },
+            }
+
+            if limit_policy != "none" and (lim_cpu_raw is not None or lim_mem_raw is not None):
+                container_patch["resources"]["limits"] = {}
+                if lim_cpu_raw is not None:
+                    container_patch["resources"]["limits"]["cpu"] = str(lim_cpu_raw)
+                if lim_mem_raw is not None:
+                    container_patch["resources"]["limits"]["memory"] = str(lim_mem_raw)
+
+            patch["spec"]["template"]["spec"]["containers"].append(container_patch)
 
         if not patch["spec"]["template"]["spec"]["containers"]:
             continue
 
-        filename = f"{clean_name(namespace)}__{clean_name(kind)}__{clean_name(name)}.json"
-        path = os.path.join(output_dir, filename)
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(patch, fh, indent=2)
             fh.write("\n")
+
+        written_files.add(filename)
+
+    for filename, path in existing_files.items():
+        if filename not in written_files:
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                pass

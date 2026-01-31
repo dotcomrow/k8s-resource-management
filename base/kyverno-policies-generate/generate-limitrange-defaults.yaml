@@ -9,13 +9,6 @@ spec:
         resources:
           kinds:
             - Namespace
-          selector:
-            matchExpressions:
-              - key: field.cattle.io/projectId
-                operator: In
-                values:
-                  - applications
-                  - infrastructure
       exclude:
         resources:
           selector:

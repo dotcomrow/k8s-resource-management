@@ -9,25 +9,16 @@ spec:
         resources:
           kinds:
             - Namespace
+      exclude:
+        resources:
           selector:
-            matchExpressions:
-              - key: field.cattle.io/projectId
-                operator: In
-                values:
-                  - "applications"
-                  - "infrastructure"
+            matchLabels:
+              platform.suncoast.systems/goldilocks: "disabled"
       mutate:
         mutateExistingOnPolicyUpdate: true
         targets:
           - apiVersion: v1
             kind: Namespace
-            selector:
-              matchExpressions:
-                - key: field.cattle.io/projectId
-                  operator: In
-                  values:
-                    - "applications"
-                    - "infrastructure"
         patchStrategicMerge:
           metadata:
             labels:

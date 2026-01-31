@@ -4,7 +4,7 @@ metadata:
   name: vpa-recommendation-exporter
   namespace: goldilocks
 spec:
-  schedule: "17 3 * * *"
+  schedule: "17 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 3
@@ -19,6 +19,13 @@ spec:
               image: python:3.11-slim
               command: ["/bin/sh", "-c"]
               args: ["/scripts/RUN_SH"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 512Mi
               env:
                 - name: REPO_URL
                   valueFrom:
@@ -55,6 +62,61 @@ spec:
                     configMapKeyRef:
                       name: vpa-recommendation-exporter
                       key: EXCLUDE_TARGETS
+                - name: EXCLUDE_NAMESPACE_LABELS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_NAMESPACE_LABELS
+                - name: EXCLUDE_NAMESPACE_ANNOTATIONS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_NAMESPACE_ANNOTATIONS
+                - name: EXCLUDE_WORKLOAD_LABELS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_WORKLOAD_LABELS
+                - name: EXCLUDE_WORKLOAD_ANNOTATIONS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_WORKLOAD_ANNOTATIONS
+                - name: EXCLUDE_POD_LABELS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_POD_LABELS
+                - name: EXCLUDE_POD_ANNOTATIONS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: EXCLUDE_POD_ANNOTATIONS
+                - name: LIMIT_POLICY
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: LIMIT_POLICY
+                - name: LIMIT_FALLBACK_MULTIPLIER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: LIMIT_FALLBACK_MULTIPLIER
+                - name: MIN_REL_CHANGE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: MIN_REL_CHANGE
+                - name: MIN_CPU_MILLICORES
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: MIN_CPU_MILLICORES
+                - name: MIN_MEM_BYTES
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: MIN_MEM_BYTES
                 - name: GIT_USERNAME
                   valueFrom:
                     secretKeyRef:
