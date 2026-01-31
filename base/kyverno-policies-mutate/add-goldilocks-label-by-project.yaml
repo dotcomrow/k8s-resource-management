@@ -9,11 +9,26 @@ spec:
         resources:
           kinds:
             - Namespace
-      exclude:
-        resources:
           selector:
-            matchLabels:
-              platform.suncoast.systems/goldilocks: "disabled"
+            matchExpressions:
+              - key: field.cattle.io/projectId
+                operator: In
+                values:
+                  - infrastructure
+                  - applications
+      exclude:
+        any:
+          - resources:
+              names:
+                - nvidia
+          - resources:
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/goldilocks: "disabled"
+          - resources:
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/vpa-exclude: "true"
       mutate:
         mutateExistingOnPolicyUpdate: true
         targets:
@@ -22,4 +37,5 @@ spec:
         patchStrategicMerge:
           metadata:
             labels:
+              platform.suncoast.systems/autosize: "enabled"
               goldilocks.fairwinds.com/enabled: "true"

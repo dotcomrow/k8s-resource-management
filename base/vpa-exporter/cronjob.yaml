@@ -62,6 +62,16 @@ spec:
                     configMapKeyRef:
                       name: vpa-recommendation-exporter
                       key: EXCLUDE_TARGETS
+                - name: INCLUDE_NAMESPACE_LABELS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: INCLUDE_NAMESPACE_LABELS
+                - name: INCLUDE_NAMESPACE_ANNOTATIONS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: INCLUDE_NAMESPACE_ANNOTATIONS
                 - name: EXCLUDE_NAMESPACE_LABELS
                   valueFrom:
                     configMapKeyRef:

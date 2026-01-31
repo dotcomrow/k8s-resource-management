@@ -19,7 +19,11 @@ and namespace defaults) managed by ArgoCD.
 ## Notes
 
 - LimitRanges are generated via Kyverno for namespaces in the Applications and
-  Infrastructure projects (`base/kyverno-policies-generate`).
+  Infrastructure projects. Kyverno labels those namespaces with
+  `platform.suncoast.systems/autosize=enabled`, which drives both Goldilocks and
+  LimitRange generation (`base/kyverno-policies-*`).
+- Add projects by updating the project ID list in
+  `base/kyverno-policies-mutate/add-goldilocks-label-by-project.yaml`.
 - Add `platform.suncoast.systems/limitrange=disabled` to a namespace to opt out.
 - VPA recommendations are exported on a schedule by `base/vpa-exporter` to the
   patch repo (`vpa-recommendations/`).
