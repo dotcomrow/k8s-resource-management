@@ -6,6 +6,8 @@ Optional exclusion config (set in `base/vpa-exporter/configmap.yaml`):
 - `EXCLUDE_NAMESPACES`: Comma/space-separated namespace patterns (glob `*` ok).
 - `EXCLUDE_TARGETS`: Comma/space-separated workload patterns: `namespace/name`,
   `kind/namespace/name`, or `name` (glob `*` ok).
+- `LIMIT_POLICY`: `upperBound` (use VPA upperBound for limits) or `none` (omit
+  limits from generated patches).
 - `INCLUDE_NAMESPACE_LABELS` / `INCLUDE_NAMESPACE_ANNOTATIONS`: Comma/space-separated
   selectors (`key` or `key=value`) used as an allowlist. When set, only matching
   namespaces are processed (e.g. `platform.suncoast.systems/autosize=enabled`).

@@ -19,7 +19,7 @@ data:
   EXCLUDE_WORKLOAD_ANNOTATIONS: ""
   EXCLUDE_POD_LABELS: "platform.suncoast.systems/vpa-exclude=true"
   EXCLUDE_POD_ANNOTATIONS: ""
-  LIMIT_POLICY: "upperBound"
+  LIMIT_POLICY: "none"
   LIMIT_FALLBACK_MULTIPLIER: "1.5"
   MIN_REL_CHANGE: "0.1"
   MIN_CPU_MILLICORES: "50"
