@@ -31,12 +31,58 @@ spec:
                 matchLabels:
                   platform.suncoast.systems/vpa-exclude: "true"
       mutate:
-        mutateExistingOnPolicyUpdate: true
-        targets:
-          - apiVersion: v1
-            kind: Namespace
         patchStrategicMerge:
           metadata:
             labels:
               platform.suncoast.systems/autosize: "enabled"
               goldilocks.fairwinds.com/enabled: "true"
+    - name: remove-autosize-label-outside-projects
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/autosize: "enabled"
+                matchExpressions:
+                  - key: field.cattle.io/projectId
+                    operator: NotIn
+                    values:
+                      - infrastructure
+                      - applications
+          - resources:
+              kinds:
+                - Namespace
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/autosize: "enabled"
+                matchExpressions:
+                  - key: field.cattle.io/projectId
+                    operator: DoesNotExist
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - argocd
+                - nvidia
+          - resources:
+              kinds:
+                - Namespace
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/autosize: "enabled"
+                  platform.suncoast.systems/vpa-exclude: "true"
+          - resources:
+              kinds:
+                - Namespace
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/autosize: "enabled"
+                  platform.suncoast.systems/goldilocks: "disabled"
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              platform.suncoast.systems/autosize: null
+              goldilocks.fairwinds.com/enabled: null

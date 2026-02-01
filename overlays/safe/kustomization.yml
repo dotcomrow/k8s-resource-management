@@ -5,5 +5,3 @@ resources:
   - ../../base/kyverno-policies-mutate
   - ../../base/kyverno-policies-generate
   - ../../base/kyverno-policies-audit
-  - ../../base/vpa-exporter
-  - ../../base/vault-policy

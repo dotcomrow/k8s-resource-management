@@ -2,6 +2,8 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: generate-vpa-autosize
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   rules:
     - name: generate-vpa-for-deployments
@@ -39,7 +41,7 @@ spec:
               kind: Deployment
               name: "{{request.object.metadata.name}}"
             updatePolicy:
-              updateMode: "Auto"
+              updateMode: "InPlaceOrRecreate"
             resourcePolicy:
               containerPolicies:
                 - containerName: "*"
@@ -49,6 +51,7 @@ spec:
                   maxAllowed:
                     cpu: "1"
                     memory: "1Gi"
+      skipBackgroundRequests: false
     - name: generate-vpa-for-statefulsets
       match:
         resources:
@@ -84,7 +87,7 @@ spec:
               kind: StatefulSet
               name: "{{request.object.metadata.name}}"
             updatePolicy:
-              updateMode: "Initial"
+              updateMode: "InPlaceOrRecreate"
             resourcePolicy:
               containerPolicies:
                 - containerName: "*"
@@ -94,3 +97,4 @@ spec:
                   maxAllowed:
                     cpu: "1"
                     memory: "1Gi"
+      skipBackgroundRequests: false
