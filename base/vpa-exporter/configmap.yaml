@@ -24,6 +24,7 @@ data:
   MIN_REL_CHANGE: "0.1"
   MIN_CPU_MILLICORES: "50"
   MIN_MEM_BYTES: "67108864"
+  ALLOW_EMPTY_EXPORT: "false"
   RUN_SH: |
     #!/bin/sh
     set -eu
@@ -534,6 +535,19 @@ data:
             fh.write("\n")
 
         written_files.add(filename)
+
+    print(
+        f"Rendered {len(written_files)} recommendation files from {len(items)} VPA objects.",
+        file=sys.stderr,
+    )
+
+    allow_empty = os.environ.get("ALLOW_EMPTY_EXPORT", "").strip().lower() in ("1", "true", "yes")
+    if not written_files and existing_files and not allow_empty:
+        print(
+            "No recommendations generated; skipping prune to avoid deleting existing files.",
+            file=sys.stderr,
+        )
+        sys.exit(0)
 
     for filename, path in existing_files.items():
         if filename not in written_files:

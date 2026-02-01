@@ -11,6 +11,8 @@ Optional exclusion config (set in `base/vpa-exporter/configmap.yaml`):
 - `INCLUDE_NAMESPACE_LABELS` / `INCLUDE_NAMESPACE_ANNOTATIONS`: Comma/space-separated
   selectors (`key` or `key=value`) used as an allowlist. When set, only matching
   namespaces are processed (e.g. `platform.suncoast.systems/autosize=enabled`).
+- `ALLOW_EMPTY_EXPORT`: `true` to allow pruning when no recommendations are
+  generated; defaults to `false` to avoid deleting all existing files.
 - `EXCLUDE_NAMESPACE_LABELS` / `EXCLUDE_NAMESPACE_ANNOTATIONS`: Comma/space-separated
   selectors (`key` or `key=value`) that match namespace labels/annotations.
 - `EXCLUDE_WORKLOAD_LABELS` / `EXCLUDE_WORKLOAD_ANNOTATIONS`: Comma/space-separated

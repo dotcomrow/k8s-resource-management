@@ -127,6 +127,11 @@ spec:
                     configMapKeyRef:
                       name: vpa-recommendation-exporter
                       key: MIN_MEM_BYTES
+                - name: ALLOW_EMPTY_EXPORT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: vpa-recommendation-exporter
+                      key: ALLOW_EMPTY_EXPORT
                 - name: GIT_USERNAME
                   valueFrom:
                     secretKeyRef:
