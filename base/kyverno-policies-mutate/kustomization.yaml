@@ -1,3 +1,4 @@
 resources:
   - add-goldilocks-label-by-project.yaml
   - nvidia-toolkit-driver-ready-rootfix.yaml
+  - nvidia-validator-driver-ready-rootfix.yaml
