@@ -36,6 +36,7 @@ spec:
             labels:
               platform.suncoast.systems/autosize: "enabled"
               goldilocks.fairwinds.com/enabled: "true"
+      skipBackgroundRequests: true
     - name: remove-autosize-label-outside-projects
       match:
         any:
@@ -86,3 +87,4 @@ spec:
             labels:
               platform.suncoast.systems/autosize: null
               goldilocks.fairwinds.com/enabled: null
+      skipBackgroundRequests: true
