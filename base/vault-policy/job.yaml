@@ -6,8 +6,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
     argocd.argoproj.io/sync-options: Force=true
-    argocd.argoproj.io/hook: PreSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   ttlSecondsAfterFinished: 300
   backoffLimit: 1
@@ -31,7 +29,17 @@ spec:
             - name: AUTH_MOUNT
               value: "kubernetes"
             - name: ROLE_NAME
-              value: "externalsecrets"
+              value: "externalsecrets-goldilocks-vpa"
+            - name: ALLOW_ROLE_CREATE
+              value: "true"
+            - name: BOUND_SERVICE_ACCOUNT_NAMES
+              value: "external-secrets-sa"
+            - name: BOUND_SERVICE_ACCOUNT_NAMESPACES
+              value: "external-secrets"
+            - name: ALIAS_NAME_SOURCE
+              value: "serviceaccount_uid"
+            - name: TOKEN_TTL
+              value: "86400"
             - name: VAULT_TOKEN
               valueFrom:
                 secretKeyRef:

@@ -21,12 +21,17 @@ data:
     policy_name = os.environ.get("POLICY_NAME", "externalsecrets-goldilocks-vpa")
     auth_mount = os.environ.get("AUTH_MOUNT", "kubernetes").strip("/")
     role_name = os.environ.get("ROLE_NAME", "externalsecrets")
+    allow_role_create = os.environ.get("ALLOW_ROLE_CREATE", "").lower() in ("1", "true", "yes")
+    bound_service_account_names = os.environ.get("BOUND_SERVICE_ACCOUNT_NAMES", "")
+    bound_service_account_namespaces = os.environ.get("BOUND_SERVICE_ACCOUNT_NAMESPACES", "")
+    alias_name_source = os.environ.get("ALIAS_NAME_SOURCE", "").strip()
+    token_ttl = os.environ.get("TOKEN_TTL", "").strip()
 
     if not vault_token:
         print("VAULT_TOKEN is required", file=sys.stderr)
         sys.exit(1)
 
-    def request(method, path, payload=None):
+    def request(method, path, payload=None, allow_not_found=False):
         url = f"{vault_addr}{path}"
         data = None
         if payload is not None:
@@ -39,9 +44,14 @@ data:
                 body = resp.read().decode("utf-8")
                 return json.loads(body) if body else {}
         except urllib.error.HTTPError as exc:
+            if allow_not_found and exc.code == 404:
+                return None
             detail = exc.read().decode("utf-8")
             print(f"Vault API error: {exc.code} {exc.reason} {detail}", file=sys.stderr)
             raise
+
+    def split_list(value):
+        return [item for item in (s.strip() for s in value.replace(",", " ").split()) if item]
 
     policy = (
         f"path \"{kv_mount}/data/{secret_path}\" {{\n"
@@ -56,11 +66,28 @@ data:
     request("PUT", f"/v1/sys/policies/acl/{policy_name}", {"policy": policy})
 
     print(f"Fetching role {role_name} from auth/{auth_mount}...")
-    role = request("GET", f"/v1/auth/{auth_mount}/role/{role_name}")
-    data = role.get("data") or {}
-    if not data:
+    role = request("GET", f"/v1/auth/{auth_mount}/role/{role_name}", allow_not_found=True)
+    data = role.get("data") if role else {}
+    role_missing = not data
+    if role_missing and not allow_role_create:
         print("Role data is empty; refusing to overwrite.", file=sys.stderr)
         sys.exit(1)
+    if role_missing:
+        bound_names = split_list(bound_service_account_names)
+        bound_namespaces = split_list(bound_service_account_namespaces)
+        if not bound_names or not bound_namespaces:
+            print("BOUND_SERVICE_ACCOUNT_NAMES and BOUND_SERVICE_ACCOUNT_NAMESPACES are required to create role.", file=sys.stderr)
+            sys.exit(1)
+        data = {
+            "bound_service_account_names": bound_names,
+            "bound_service_account_namespaces": bound_namespaces,
+            "policies": [policy_name],
+            "token_policies": [policy_name],
+        }
+        if alias_name_source:
+            data["alias_name_source"] = alias_name_source
+        if token_ttl:
+            data["token_ttl"] = int(token_ttl) if token_ttl.isdigit() else token_ttl
 
     policies = data.get("policies") or data.get("token_policies") or []
     if isinstance(policies, str):
@@ -89,6 +116,7 @@ data:
     }
     payload = {k: v for k, v in data.items() if k in allowed_keys}
 
-    print(f"Updating role {role_name} policies...")
+    action = "Creating" if role_missing else "Updating"
+    print(f"{action} role {role_name} policies...")
     request("POST", f"/v1/auth/{auth_mount}/role/{role_name}", payload)
     print("Done.")

@@ -22,14 +22,14 @@ Optional exclusion config (set in `base/vpa-exporter/configmap.yaml`):
 
 Required Secret (rendered via External Secrets):
 
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: vpa-recommendation-exporter-git
   namespace: goldilocks
 spec:
   secretStoreRef:
-    name: vault-store
+    name: vault-store-goldilocks
     kind: ClusterSecretStore
   target:
     name: vpa-recommendation-exporter-git
@@ -39,7 +39,7 @@ spec:
   data:
     - secretKey: token
       remoteRef:
-        key: k8s-core-patches/vpa-recommendation-exporter
-        property: token
+        key: goldilocks-vpa-write-token
+        property: value
 
 Ensure the Vault key exists and the token has repo write permissions.

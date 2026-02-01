@@ -2,6 +2,7 @@ resources:
   - serviceaccount.yaml
   - clusterrole.yaml
   - clusterrolebinding.yaml
+  - clustersecretstore.yaml
   - externalsecret.yaml
   - configmap.yaml
   - cronjob.yaml
