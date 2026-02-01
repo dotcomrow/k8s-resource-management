@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: suspend-vpa-patch-pipeline
+spec:
+  rules:
+    - name: suspend-vpa-recommendation-apply
+      match:
+        resources:
+          kinds:
+            - CronJob
+          names:
+            - vpa-recommendation-apply
+          namespaces:
+            - goldilocks
+      mutate:
+        mutateExistingOnPolicyUpdate: true
+        patchStrategicMerge:
+          spec:
+            suspend: true
+    - name: suspend-vpa-recommendation-exporter
+      match:
+        resources:
+          kinds:
+            - CronJob
+          names:
+            - vpa-recommendation-exporter
+          namespaces:
+            - goldilocks
+      mutate:
+        mutateExistingOnPolicyUpdate: true
+        patchStrategicMerge:
+          spec:
+            suspend: true

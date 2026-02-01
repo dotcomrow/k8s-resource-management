@@ -1,2 +1,3 @@
 resources:
   - generate-limitrange-defaults.yaml
+  - generate-vpa-autosize.yaml
