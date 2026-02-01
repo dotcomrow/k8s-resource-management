@@ -1,0 +1,42 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: nvidia-toolkit-driver-ready-rootfix
+spec:
+  rules:
+    - name: inject-driver-ready-rewrite
+      match:
+        resources:
+          kinds:
+            - DaemonSet
+          namespaces:
+            - nvidia
+          selector:
+            matchLabels:
+              app: nvidia-container-toolkit-daemonset
+      mutate:
+        patchesJson6902: |-
+          - op: add
+            path: /spec/template/spec/initContainers/-
+            value:
+              name: fix-driver-ready
+              image: busybox:1.36
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+              args:
+                - >-
+                  if [ -f /run/nvidia/validations/driver-ready ]; then
+                    sed -i 's|^NVIDIA_DRIVER_ROOT=.*|NVIDIA_DRIVER_ROOT=/|; s|^DRIVER_ROOT_CTR_PATH=.*|DRIVER_ROOT_CTR_PATH=/|; s|^NVIDIA_DEV_ROOT=.*|NVIDIA_DEV_ROOT=/|; s|^DEV_ROOT_CTR_PATH=.*|DEV_ROOT_CTR_PATH=/|' /run/nvidia/validations/driver-ready;
+                  fi
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  cpu: 50m
+                  memory: 64Mi
+              volumeMounts:
+                - name: run-nvidia-validations
+                  mountPath: /run/nvidia/validations
