@@ -1,5 +1,6 @@
 resources:
   - add-goldilocks-label-by-project.yaml
+  - exclude-ollama-from-vpa.yaml
   - suspend-vpa-patch-pipeline.yaml
   - nvidia-toolkit-driver-ready-rootfix.yaml
   - nvidia-validator-driver-ready-rootfix.yaml

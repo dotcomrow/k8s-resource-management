@@ -3,6 +3,8 @@ kind: ClusterPolicy
 metadata:
   name: add-goldilocks-label-by-project
 spec:
+  background: true
+  mutateExistingOnPolicyUpdate: true
   rules:
     - name: label-goldilocks-namespaces
       match:
@@ -37,7 +39,7 @@ spec:
             labels:
               platform.suncoast.systems/autosize: "enabled"
               goldilocks.fairwinds.com/enabled: "true"
-      skipBackgroundRequests: true
+      skipBackgroundRequests: false
     - name: remove-autosize-label-outside-projects
       match:
         any:
@@ -94,4 +96,4 @@ spec:
             labels:
               platform.suncoast.systems/autosize: null
               goldilocks.fairwinds.com/enabled: null
-      skipBackgroundRequests: true
+      skipBackgroundRequests: false

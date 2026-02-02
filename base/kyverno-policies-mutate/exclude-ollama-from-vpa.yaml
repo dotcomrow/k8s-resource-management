@@ -1,0 +1,24 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: exclude-ollama-from-vpa
+spec:
+  background: true
+  mutateExistingOnPolicyUpdate: true
+  rules:
+    - name: label-ollama-workload
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+          names:
+            - ollama
+          namespaces:
+            - ollama
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              platform.suncoast.systems/vpa-exclude: "true"
+      skipBackgroundRequests: false
