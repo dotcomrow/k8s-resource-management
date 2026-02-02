@@ -24,6 +24,10 @@ spec:
               namespaceSelector:
                 matchLabels:
                   platform.suncoast.systems/vpa-exclude: "true"
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kyverno
       generate:
         apiVersion: autoscaling.k8s.io/v1
         kind: VerticalPodAutoscaler
@@ -45,12 +49,13 @@ spec:
             resourcePolicy:
               containerPolicies:
                 - containerName: "*"
+                  controlledValues: "RequestsAndLimits"
                   minAllowed:
                     cpu: "200m"
                     memory: "256Mi"
                   maxAllowed:
                     cpu: "1"
-                    memory: "1Gi"
+                    memory: "3Gi"
       skipBackgroundRequests: false
     - name: generate-vpa-for-statefulsets
       match:
@@ -70,6 +75,10 @@ spec:
               namespaceSelector:
                 matchLabels:
                   platform.suncoast.systems/vpa-exclude: "true"
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kyverno
       generate:
         apiVersion: autoscaling.k8s.io/v1
         kind: VerticalPodAutoscaler
@@ -91,10 +100,11 @@ spec:
             resourcePolicy:
               containerPolicies:
                 - containerName: "*"
+                  controlledValues: "RequestsAndLimits"
                   minAllowed:
                     cpu: "200m"
                     memory: "256Mi"
                   maxAllowed:
                     cpu: "1"
-                    memory: "1Gi"
+                    memory: "3Gi"
       skipBackgroundRequests: false

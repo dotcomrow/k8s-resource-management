@@ -21,6 +21,7 @@ spec:
           - resources:
               names:
                 - argocd
+                - kyverno
                 - nvidia
           - resources:
               selector:
@@ -66,6 +67,7 @@ spec:
                 - Namespace
               names:
                 - argocd
+                - kyverno
                 - nvidia
           - resources:
               kinds:
@@ -81,6 +83,11 @@ spec:
                 matchLabels:
                   platform.suncoast.systems/autosize: "enabled"
                   platform.suncoast.systems/goldilocks: "disabled"
+      exclude:
+        any:
+          - resources:
+              names:
+                - ingress-nginx
       mutate:
         patchStrategicMerge:
           metadata:

@@ -4,4 +4,4 @@ resources:
   - ../../base/goldilocks
   - ../../base/kyverno-policies-mutate
   - ../../base/kyverno-policies-generate
-  - ../../base/kyverno-policies-enforce
+  - ../../base/kyverno-policies-audit

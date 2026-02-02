@@ -1,0 +1,44 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: autosize-no-explicit-resources
+  annotations:
+    policies.kyverno.io/title: Autosize workloads should not set explicit resources
+    policies.kyverno.io/category: Autosize
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Deployment,StatefulSet
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: no-explicit-resources
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+          namespaceSelector:
+            matchLabels:
+              platform.suncoast.systems/autosize: "enabled"
+      exclude:
+        any:
+          - resources:
+              selector:
+                matchLabels:
+                  platform.suncoast.systems/vpa-exclude: "true"
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.suncoast.systems/vpa-exclude: "true"
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: kyverno
+      validate:
+        message: "Explicit requests/limits should be removed; VPA will manage resources."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.template.spec.containers[?resources.requests || resources.limits] | length(@) }}"
+                operator: GreaterThan
+                value: 0
