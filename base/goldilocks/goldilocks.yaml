@@ -235,11 +235,6 @@ spec:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             runAsUser: 10324
-          resources:
-            limits: {}
-            requests:
-              cpu: 25m
-              memory: 256Mi
 ---
 # Source: goldilocks/templates/dashboard-deployment.yaml
 apiVersion: apps/v1
@@ -301,8 +296,3 @@ spec:
             httpGet:
               path: /health
               port: http
-          resources:
-            limits: {}
-            requests:
-              cpu: 25m
-              memory: 256Mi

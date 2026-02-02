@@ -20,13 +20,6 @@ spec:
               image: python:3.11-slim
               command: ["/bin/sh", "-c"]
               args: ["/scripts/RUN_SH"]
-              resources:
-                requests:
-                  cpu: 50m
-                  memory: 128Mi
-                limits:
-                  cpu: 250m
-                  memory: 512Mi
               env:
                 - name: REPO_URL
                   valueFrom:

@@ -49,13 +49,6 @@ spec:
             - name: scripts
               mountPath: /scripts
               readOnly: true
-          resources:
-            requests:
-              cpu: "25m"
-              memory: "64Mi"
-            limits:
-              cpu: "100m"
-              memory: "128Mi"
       volumes:
         - name: scripts
           configMap:
