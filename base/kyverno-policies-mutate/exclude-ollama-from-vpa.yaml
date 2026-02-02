@@ -17,6 +17,11 @@ spec:
           namespaces:
             - ollama
       mutate:
+        targets:
+          - apiVersion: "{{request.object.apiVersion}}"
+            kind: "{{request.object.kind}}"
+            name: "{{request.object.metadata.name}}"
+            namespace: "{{request.object.metadata.namespace}}"
         patchStrategicMerge:
           metadata:
             labels:

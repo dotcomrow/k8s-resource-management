@@ -34,6 +34,10 @@ spec:
                 matchLabels:
                   platform.suncoast.systems/vpa-exclude: "true"
       mutate:
+        targets:
+          - apiVersion: v1
+            kind: Namespace
+            name: "{{request.object.metadata.name}}"
         patchStrategicMerge:
           metadata:
             labels:
@@ -91,6 +95,10 @@ spec:
               names:
                 - ingress-nginx
       mutate:
+        targets:
+          - apiVersion: v1
+            kind: Namespace
+            name: "{{request.object.metadata.name}}"
         patchStrategicMerge:
           metadata:
             labels:
