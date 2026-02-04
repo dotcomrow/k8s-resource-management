@@ -1,0 +1,31 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: app-infra-namespace-prefer-work-nodes
+spec:
+  background: true
+  mutateExistingOnPolicyUpdate: true
+  rules:
+    - name: prefer-work-nodes-for-app-infra
+      match:
+        resources:
+          kinds:
+            - Namespace
+          selector:
+            matchExpressions:
+              - key: field.cattle.io/projectId
+                operator: In
+                values:
+                  - infrastructure
+                  - applications
+      mutate:
+        targets:
+          - apiVersion: v1
+            kind: Namespace
+            name: "{{request.object.metadata.name}}"
+        patchStrategicMerge:
+          metadata:
+            annotations:
+              scheduler.alpha.kubernetes.io/affinity: |
+                {"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"work-node","operator":"In","values":["true"]}]}}]}}
+      skipBackgroundRequests: false

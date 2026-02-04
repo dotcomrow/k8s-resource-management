@@ -1,0 +1,40 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: ollama-require-gpu-node
+spec:
+  background: true
+  mutateExistingOnPolicyUpdate: true
+  rules:
+    - name: require-gpu-node
+      match:
+        resources:
+          kinds:
+            - Deployment
+            - StatefulSet
+          names:
+            - ollama
+          namespaces:
+            - ollama
+      mutate:
+        targets:
+          - apiVersion: "{{request.object.apiVersion}}"
+            kind: "{{request.object.kind}}"
+            name: "{{request.object.metadata.name}}"
+            namespace: "{{request.object.metadata.namespace}}"
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: nvidia.com/gpu.present
+                              operator: In
+                              values:
+                                - "true"
+                nodeSelector:
+                  nvidia.com/gpu.present: "true"
+      skipBackgroundRequests: false
