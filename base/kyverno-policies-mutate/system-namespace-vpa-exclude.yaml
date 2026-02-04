@@ -70,7 +70,7 @@ spec:
         any:
           - resources:
               kinds:
-                - Project.management.cattle.io/v3
+                - management.cattle.io/v3/Project
       preconditions:
         all:
           - key: "{{ request.object.metadata.name }}"

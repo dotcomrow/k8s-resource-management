@@ -1,6 +1,8 @@
 resources:
   - add-goldilocks-label-by-project.yaml
   - app-infra-namespace-prefer-work-nodes.yaml
+  - critical-workloads-require-resources.yaml
+  - critical-workloads-vpa-exclude.yaml
   - exclude-ollama-from-vpa.yaml
   - ollama-require-gpu-node.yaml
   - suspend-vpa-patch-pipeline.yaml

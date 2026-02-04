@@ -1,0 +1,92 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: critical-workloads-vpa-exclude
+spec:
+  background: true
+  mutateExistingOnPolicyUpdate: true
+  rules:
+    - name: exclude-yugabyte
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+          namespaces:
+            - yugabyte
+          names:
+            - yb-master
+            - yb-tserver
+      mutate:
+        targets:
+          - apiVersion: "{{request.object.apiVersion}}"
+            kind: "{{request.object.kind}}"
+            name: "{{request.object.metadata.name}}"
+            namespace: "{{request.object.metadata.namespace}}"
+        patchStrategicMerge:
+          metadata:
+            labels:
+              platform.suncoast.systems/vpa-exclude: "true"
+    - name: exclude-teleport
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+          namespaces:
+            - teleport
+          names:
+            - etcd
+            - teleport
+      mutate:
+        targets:
+          - apiVersion: "{{request.object.apiVersion}}"
+            kind: "{{request.object.kind}}"
+            name: "{{request.object.metadata.name}}"
+            namespace: "{{request.object.metadata.namespace}}"
+        patchStrategicMerge:
+          metadata:
+            labels:
+              platform.suncoast.systems/vpa-exclude: "true"
+    - name: exclude-redis
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+          namespaces:
+            - redis
+          names:
+            - redis
+      mutate:
+        targets:
+          - apiVersion: "{{request.object.apiVersion}}"
+            kind: "{{request.object.kind}}"
+            name: "{{request.object.metadata.name}}"
+            namespace: "{{request.object.metadata.namespace}}"
+        patchStrategicMerge:
+          metadata:
+            labels:
+              platform.suncoast.systems/vpa-exclude: "true"
+    - name: exclude-kafka
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+            - Deployment
+          namespaces:
+            - kafka
+          names:
+            - kafka
+            - schema-registry
+            - kafka-connect
+            - kafka-ui
+            - oauth2-proxy
+            - bootstrap-watcher
+      mutate:
+        targets:
+          - apiVersion: "{{request.object.apiVersion}}"
+            kind: "{{request.object.kind}}"
+            name: "{{request.object.metadata.name}}"
+            namespace: "{{request.object.metadata.namespace}}"
+        patchStrategicMerge:
+          metadata:
+            labels:
+              platform.suncoast.systems/vpa-exclude: "true"

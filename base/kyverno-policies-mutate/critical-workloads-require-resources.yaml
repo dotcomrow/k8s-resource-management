@@ -1,0 +1,108 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: critical-workloads-require-resources
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-requests-limits-yugabyte
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+          namespaces:
+            - yugabyte
+          names:
+            - yb-master
+            - yb-tserver
+      validate:
+        message: "Yugabyte workloads must set CPU and memory requests/limits."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - resources:
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+                      limits:
+                        cpu: "?*"
+                        memory: "?*"
+    - name: require-requests-limits-teleport
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+          namespaces:
+            - teleport
+          names:
+            - etcd
+            - teleport
+      validate:
+        message: "Teleport workloads must set CPU and memory requests/limits."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - resources:
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+                      limits:
+                        cpu: "?*"
+                        memory: "?*"
+    - name: require-requests-limits-redis
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+          namespaces:
+            - redis
+          names:
+            - redis
+      validate:
+        message: "Redis workloads must set CPU and memory requests/limits."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - resources:
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+                      limits:
+                        cpu: "?*"
+                        memory: "?*"
+    - name: require-requests-limits-kafka
+      match:
+        resources:
+          kinds:
+            - StatefulSet
+            - Deployment
+          namespaces:
+            - kafka
+          names:
+            - kafka
+            - schema-registry
+            - kafka-connect
+            - kafka-ui
+            - oauth2-proxy
+            - bootstrap-watcher
+      validate:
+        message: "Kafka workloads must set CPU and memory requests/limits."
+        pattern:
+          spec:
+            template:
+              spec:
+                containers:
+                  - resources:
+                      requests:
+                        cpu: "?*"
+                        memory: "?*"
+                      limits:
+                        cpu: "?*"
+                        memory: "?*"
