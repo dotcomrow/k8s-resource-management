@@ -4,6 +4,7 @@ resources:
   - critical-workloads-require-resources.yaml
   - critical-workloads-vpa-exclude.yaml
   - exclude-ollama-from-vpa.yaml
+  - kyverno-projects-rbac.yaml
   - ollama-require-gpu-node.yaml
   - suspend-vpa-patch-pipeline.yaml
   - nvidia-toolkit-driver-ready-rootfix.yaml
