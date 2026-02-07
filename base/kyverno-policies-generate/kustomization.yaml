@@ -1,5 +1,0 @@
-resources:
-  - generate-limitrange-defaults.yaml
-  - generate-vpa-autosize.yaml
-  - generate-pdbs.yaml
-  - kyverno-vpa-rbac.yaml

@@ -1,13 +1,7 @@
 resources:
-  - add-goldilocks-label-by-project.yaml
-  - app-infra-namespace-prefer-work-nodes.yaml
   - critical-workloads-require-resources.yaml
-  - critical-workloads-vpa-exclude.yaml
   - exclude-ollama-from-vpa.yaml
-  - kyverno-projects-rbac.yaml
   - ollama-require-gpu-node.yaml
   - suspend-vpa-patch-pipeline.yaml
   - nvidia-toolkit-driver-ready-rootfix.yaml
   - nvidia-validator-driver-ready-rootfix.yaml
-  - system-namespace-priority.yaml
-  - system-namespace-vpa-exclude.yaml

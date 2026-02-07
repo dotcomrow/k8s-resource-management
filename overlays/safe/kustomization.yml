@@ -1,8 +1,1 @@
-resources:
-  - ../../base/namespaces
-  - ../../base/priority-classes
-  - ../../base/vpa
-  - ../../base/goldilocks
-  - ../../base/kyverno-policies-mutate
-  - ../../base/kyverno-policies-generate
-  - ../../base/kyverno-policies-audit
+resources: []

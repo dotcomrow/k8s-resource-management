@@ -1,5 +1,0 @@
-resources:
-  - goldilocks.yaml
-patchesStrategicMerge:
-  - patch-dashboard-service.yaml
-  - patch-controller-scale.yaml
